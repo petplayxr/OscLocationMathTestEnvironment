@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Visualization</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+
+        //pure chatgpt garbage
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add directional light for shading
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1).normalize();
+        scene.add(directionalLight);
+
+        const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
+        scene.add(ambientLight);
+
+        // Add white ball with standard material
+        const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        const whiteBall = new THREE.Mesh(geometry, material);
+        scene.add(whiteBall);
+
+        // Add ground plane with standard material
+        const planeGeometry = new THREE.PlaneGeometry(10, 10);
+        const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x87ceeb, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = -1.6; // Set the ground plane 1.6 meters below the camera
+        scene.add(plane);
+
+        // Set camera position
+        camera.position.z = 0; // The camera is at the origin
+        camera.position.y = 1.6; // Camera height to simulate human eye level
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Map distance function
+        function mapDistanceToPosition(distance) {
+            return 3 * (1 - distance); // Maps distance [0, 1] to position [3, 0]
+        }
+
+        // WebSocket connection
+        const socket = new WebSocket('ws://localhost:8080/ws');
+
+        socket.addEventListener('message', function (event) {
+            const data = JSON.parse(event.data);
+            const { relativePosition, distance } = data;
+
+            const mappedDistance = mapDistanceToPosition(distance);
+
+            // Set position based on mapped distance
+            //x yVertical z
+            whiteBall.position.set(0, relativePosition[2]+1.2, relativePosition[0] - mappedDistance);
+
+            // Adjust scale based on distance to simulate perspective
+            /* const scale = 1 / (mappedDistance + 1);
+            whiteBall.scale.set(scale, scale, scale); */
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
