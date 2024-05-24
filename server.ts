@@ -1,6 +1,7 @@
 import { serveFile } from "jsr:@std/http/file-server";
 import { BallPositionCalculator } from "./calculate.ts";
 import { OscSubscriber } from './getvrcpos.ts';
+import { extname } from "https://deno.land/std@0.224.0/path/mod.ts";
 
 //osc params
 const PetPlay1: string = "/avatar/parameters/PetPlayPole1"; //float out
@@ -31,16 +32,21 @@ const handler = async (req: Request): Promise<Response> => {
             distances[address] = value;
 
             if (Object.keys(distances).length === 4) {
-                calculator.redDistance = distances[PetPlay1];
-                calculator.blueDistance = distances[PetPlay2];
-                calculator.greenDistance = distances[PetPlay3];
-                calculator.whiteDistance = distances[PetPlay4];
+                const redDistance = distances[PetPlay1];
+                const blueDistance = distances[PetPlay2];
+                const greenDistance = distances[PetPlay3];
+                const whiteDistance = distances[PetPlay4];
 
+                const calculator = new BallPositionCalculator(redDistance, blueDistance, greenDistance, whiteDistance);
                 const result = calculator.calculateRelativePosition();
 
                 if (socket.readyState === WebSocket.OPEN) {
-                    console.log("Sending result:", JSON.stringify(result));
-                    socket.send(JSON.stringify(result));
+                    if (result !== undefined) {
+                        console.log("Sending result:", JSON.stringify(result));
+                        socket.send(JSON.stringify(result));
+                    } else {
+                        console.log("No valid position calculated.");
+                    }
                 }
             }
         });
