@@ -1,100 +1,103 @@
 export class BallPositionCalculator {
-    private distances: number[];
-    private points: [number, number, number][];
+  private distances: number[];
+  private points: [number, number, number][];
 
-    constructor(redDistance: number, blueDistance: number, greenDistance: number, whiteDistance: number) {
-        this.distances = [redDistance, blueDistance, greenDistance, whiteDistance];
-        this.points = [
-            [0.5, 0, 0],
-            [0, 0.5, 0],
-            [0, 0, 0.5],
-            [0, 0, 0]   // Origin
-        ];
+  constructor(
+    redDistance: number,
+    blueDistance: number,
+    greenDistance: number,
+    whiteDistance: number
+  ) {
+    this.distances = [redDistance, blueDistance, greenDistance, whiteDistance];
+    this.points = [
+      [0.1, 0, 0],
+      [0, 0.1, 0],
+      [0, 0, 0.1],
+      [0, 0, 0], // Origin
+    ];
+  }
+
+  calculateRelativePosition(): [number, number, number] | undefined {
+    // 1. Solve for (x, y) using circle intersections on the horizontal plane
+    const horizontalPosition = this.calculateHorizontalPosition();
+    if (!horizontalPosition) {
+      //console.error("Could not determine a valid horizontal position.");
+      return undefined;
     }
 
-    calculateRelativePosition(): [number, number, number] | undefined {
-        // Calculate potential positions by checking all combinations of three points
-        for (let i = 0; i < this.points.length; i++) {
-            for (let j = i + 1; j < this.points.length; j++) {
-                for (let k = j + 1; k < this.points.length; k++) {
-                    const solutions = this.threeSphereIntersection(this.points[i], this.distances[i], this.points[j], this.distances[j], this.points[k], this.distances[k]);
-                    if (solutions.length > 0) {
-                        // Optionally check distance to the fourth point here if necessary
-                        return solutions[0]; // return first valid position
-                    }
-                }
-            }
-        }
-        return undefined; // No valid position found
+    // 2. Calculate z using the calculated (x, y) and the distances
+    const z = this.calculateZCoordinate(horizontalPosition); 
+    if (!z) {
+      //console.error("Could not determine a valid z coordinate.");
+      return undefined;
     }
 
-    // Create functions to calculate sphere intersections
-    sphereIntersection = (
-        p1: [number, number, number],
-        r1: number,
-        p2: [number, number, number],
-        r2: number
-      ): [number, number, number][] => {
-        // Calculate distance between sphere centers
-        const distance = Math.sqrt(
-          (p2[0] - p1[0]) ** 2 +
-          (p2[1] - p1[1]) ** 2 +
-          (p2[2] - p1[2]) ** 2
-        );
-  
-        // Check for no solutions
-        if (distance > r1 + r2 || distance < Math.abs(r1 - r2)) {
-          return []; // No intersection
-        }
-  
-        // Calculate intersection circle parameters
-        const a = (r1 ** 2 - r2 ** 2 + distance ** 2) / (2 * distance);
-        const h = Math.sqrt(r1 ** 2 - a ** 2);
-        const x2 =
-          p1[0] + ((p2[0] - p1[0]) * a) / distance;
-        const y2 =
-          p1[1] + ((p2[1] - p1[1]) * a) / distance;
-        const z2 =
-          p1[2] + ((p2[2] - p1[2]) * a) / distance;
-  
-        // Calculate intersection points
-        const intersectionPoints: [number, number, number][] = [];
-        intersectionPoints.push([
-          x2 + ((p2[1] - p1[1]) * h) / distance,
-          y2 - ((p2[0] - p1[0]) * h) / distance,
-          z2
-        ]);
-        intersectionPoints.push([
-          x2 - ((p2[1] - p1[1]) * h) / distance,
-          y2 + ((p2[0] - p1[0]) * h) / distance,
-          z2
-        ]);
-  
-        return intersectionPoints;
-      };
+    // 3. Combine (x, y) and z to get the 3D position
+    return [...horizontalPosition, z]; 
+  }
 
-    private threeSphereIntersection(
-        p1: [number, number, number], 
-        r1: number, 
-        p2: [number, number, number], 
-        r2: number, 
-        p3: [number, number, number], 
-        r3: number
-    ): [number, number, number][] {
-        const intersections12 = this.sphereIntersection(p1, r1, p2, r2);
-      if (intersections12.length === 0) return [];
-
-      const possibleSolutions: [number, number, number][] = [];
-      for (const intersection of intersections12) {
-        const distanceToThirdSphere = Math.sqrt(
-          (intersection[0] - p3[0]) ** 2 +
-          (intersection[1] - p3[1]) ** 2 +
-          (intersection[2] - p3[2]) ** 2
+  // Calculate the (x, y) coordinates using circle intersections
+  private calculateHorizontalPosition(): [number, number] | undefined {
+    for (let i = 0; i < this.points.length; i++) {
+      for (let j = i + 1; j < this.points.length; j++) {
+        const solutions = this.twoCircleIntersection(
+          this.points[i],
+          this.distances[i],
+          this.points[j],
+          this.distances[j]
         );
-        if (Math.abs(distanceToThirdSphere - r3) < 0.1) { // Tolerance for floating-point precision
-          possibleSolutions.push(intersection);
+        
+        // You might want to add logic here to choose the "best" solution 
+        // from 'solutions' if you get multiple valid intersections.
+        // For now, we are returning the first valid solution found.
+        if (solutions.length > 0) {
+          return solutions[0];
         }
       }
-      return possibleSolutions;
     }
+    return undefined; // No valid horizontal position found
+  }
+
+  // Calculate the z coordinate given (x, y) and distances
+  private calculateZCoordinate(xy: [number, number]): number | undefined {
+    // Simplified calculation for z (you might need to adapt this)
+    for (let i = 0; i < this.points.length; i++) {
+      const dx = xy[0] - this.points[i][0];
+      const dy = xy[1] - this.points[i][1];
+      const dzSquared = this.distances[i] ** 2 - dx ** 2 - dy ** 2;
+
+      if (dzSquared >= 0) { 
+        return Math.sqrt(dzSquared);
+      }
+    }
+    return undefined;
+  }
+
+  // Function to calculate the intersection of two circles
+  // (Simplified for 2D - x and y coordinates only)
+  private twoCircleIntersection(
+    p1: [number, number, number],
+    r1: number,
+    p2: [number, number, number],
+    r2: number
+  ): [[number, number]] | [] {
+    const dx = p2[0] - p1[0];
+    const dy = p2[1] - p1[1];
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > r1 + r2 || distance < Math.abs(r1 - r2)) {
+      return [];
+    }
+
+    const a = (r1 * r1 - r2 * r2 + distance * distance) / (2 * distance);
+    const h = Math.sqrt(r1 * r1 - a * a);
+
+    const x2 = p1[0] + (dx * a) / distance;
+    const y2 = p1[1] + (dy * a) / distance;
+
+    const intersection1: [number, number] = [x2 + (dy * h) / distance, y2 - (dx * h) / distance];
+    const intersection2: [number, number] = [x2 - (dy * h) / distance, y2 + (dx * h) / distance];
+
+    return [intersection1]; 
+  }
 }

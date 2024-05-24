@@ -7,12 +7,32 @@
     <style>
         body { margin: 0; }
         canvas { display: block; }
+        .height-meter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 50px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #fff;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        .height-indicator {
+            width: 100%;
+            background: #00ff00;
+            text-align: center;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
+    <div class="height-meter">
+        <div id="height-indicator" class="height-indicator">0</div>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -44,11 +64,14 @@
         // Add grid helper
         const gridHelper = new THREE.GridHelper(10,20); // 10 units, 20 subdivisions (0.5m grid)
         gridHelper.position.y = 0.001;
-        scene.add(gridHelper);
+        //scene.add(gridHelper);
 
         // Set camera position
         camera.position.set(0, 10, 0); // Move camera up along the y-axis
-        camera.lookAt(0, 0, 0); // Camera looks at the origin
+        
+        camera.lookAt(0.001, 0, 0.001); // Camera looks at the origi
+
+        
 
         function remapPosition(value, oldMin, oldMax, newMin, newMax) {
             return ((value - oldMin) / (oldMax - oldMin)) * (newMax - newMin) + newMin;
@@ -75,14 +98,19 @@
 
             // Assuming relativePosition is an array [x, y, z] and remapPosition is correctly defined
             const remappedRelativePosition = [
-                remapPosition(relativePosition[0], 0, 1, 0, 10),
-                remapPosition(relativePosition[1], 0, 1, 0, 10),
-                remapPosition(relativePosition[2], 0, 1, 0, 10)
+                remapPosition(relativePosition[0], 1, 0, 0, 5),
+                remapPosition(relativePosition[1], 1, 0, 0, 5),
+                remapPosition(relativePosition[2], 1, 0, 0, 5)
             ];
 
             // Set position based on remapped coordinates
             // Ensure the axes are correctly mapped; here, it seems there was an axis swap in your original code
-            whiteBall.position.set(remappedRelativePosition[0], remappedRelativePosition[1], remappedRelativePosition[2]);
+            whiteBall.position.set(remappedRelativePosition[1], 0, remappedRelativePosition[0]);
+
+            // Update height indicator
+            const heightPercentage = (remappedRelativePosition[1] / 10) * 100;
+            document.getElementById('height-indicator').style.height = heightPercentage + '%';
+            document.getElementById('height-indicator').textContent = remappedRelativePosition[3].toFixed(2);
         });
 
         // Handle window resize
