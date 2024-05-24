@@ -13,10 +13,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
 
-        //pure chatgpt garbage
-
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
@@ -40,12 +38,11 @@
         const planeMaterial = new THREE.MeshStandardMaterial({ color: 0x87ceeb, side: THREE.DoubleSide });
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
         plane.rotation.x = -Math.PI / 2;
-        plane.position.y = -1.6; // Set the ground plane 1.6 meters below the camera
         scene.add(plane);
 
         // Set camera position
-        camera.position.z = 0; // The camera is at the origin
-        camera.position.y = 1.6; // Camera height to simulate human eye level
+        camera.position.set(0, 5, 0); // Move camera up along the y-axis
+        camera.lookAt(0, 0, 0); // Camera looks at the origin
 
         // Animation loop
         function animate() {
@@ -69,12 +66,7 @@
             const mappedDistance = mapDistanceToPosition(distance);
 
             // Set position based on mapped distance
-            //x yVertical z
-            whiteBall.position.set(0, relativePosition[2]+1.2, relativePosition[0] - mappedDistance);
-
-            // Adjust scale based on distance to simulate perspective
-            /* const scale = 1 / (mappedDistance + 1);
-            whiteBall.scale.set(scale, scale, scale); */
+            whiteBall.position.set(relativePosition[0], 0, 0);
         });
 
         // Handle window resize
