@@ -1,8 +1,6 @@
 import { serveFile } from "jsr:@std/http/file-server";
-import { BallPositionCalculator } from "./calculate4.ts";
 import { Tetrahedron3D } from "./tetrahedron.ts";
 import { OscSubscriber } from './getvrcpos.ts';
-import { extname } from "https://deno.land/std@0.224.0/path/mod.ts";
 
 //osc params
 const PetPlay1: string = "/avatar/parameters/PetPlayPole1"; //float out
@@ -11,10 +9,9 @@ const PetPlay3: string = "/avatar/parameters/PetPlayPole3"; //float out
 const PetPlay4: string = "/avatar/parameters/PetPlayPole4"; //float out
 
 const distances: { [key: string]: number } = {};
-const calculator = new BallPositionCalculator(0, 0, 0, 0);
 
 const handler = async (req: Request): Promise<Response> => {
-    const path = new URL(req.url).pathname;
+    const path = await new URL(req.url).pathname;
     console.log("req.url:", req.url);   
 
     if (req.url === 'http://localhost:8080/ws') {
@@ -29,14 +26,14 @@ const handler = async (req: Request): Promise<Response> => {
 
         const oscSubscriber = new OscSubscriber([PetPlay1, PetPlay2, PetPlay3, PetPlay4]);
 
+        //define the object
         const tetrahedron = new Tetrahedron3D([
             [0.1, 0, 0],
             [0, 0.1, 0],
             [0, 0, 0.1],
             [0, 0, 0]
-          ]);
+        ]);
           
-
         oscSubscriber.subscribe((address, value) => {
             distances[address] = value;
 
@@ -48,11 +45,8 @@ const handler = async (req: Request): Promise<Response> => {
 
                 const secondTetrahedron = tetrahedron.findSecondTetrahedron([redDistance, blueDistance, greenDistance, whiteDistance]);
 
-                //const calculator = new BallPositionCalculator(redDistance, blueDistance, greenDistance, whiteDistance);
-                const result = calculator.calculateRelativePosition();
-
                 if (socket.readyState === WebSocket.OPEN) {
-                    if (result !== undefined) {
+                    if (secondTetrahedron !== undefined) {
                         const result2 = secondTetrahedron
                         console.log("Sending result:", JSON.stringify(result2));
                         socket.send(JSON.stringify(result2));
@@ -72,6 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (path === "/") {
         return serveFile(req, "./index.html");
     }
+    return new Response(null, {status: 404});
 };
 
 Deno.serve({port: 8080}, handler);
