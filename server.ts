@@ -1,5 +1,6 @@
 import { serveFile } from "jsr:@std/http/file-server";
-import { BallPositionCalculator } from "./calculate.ts";
+import { BallPositionCalculator } from "./calculate4.ts";
+import { Tetrahedron3D } from "./tetrahedron.ts";
 import { OscSubscriber } from './getvrcpos.ts';
 import { extname } from "https://deno.land/std@0.224.0/path/mod.ts";
 
@@ -28,6 +29,14 @@ const handler = async (req: Request): Promise<Response> => {
 
         const oscSubscriber = new OscSubscriber([PetPlay1, PetPlay2, PetPlay3, PetPlay4]);
 
+        const tetrahedron = new Tetrahedron3D([
+            [0.1, 0, 0],
+            [0, 0.1, 0],
+            [0, 0, 0.1],
+            [0, 0, 0]
+          ]);
+          
+
         oscSubscriber.subscribe((address, value) => {
             distances[address] = value;
 
@@ -37,13 +46,16 @@ const handler = async (req: Request): Promise<Response> => {
                 const greenDistance = distances[PetPlay3];
                 const whiteDistance = distances[PetPlay4];
 
-                const calculator = new BallPositionCalculator(redDistance, blueDistance, greenDistance, whiteDistance);
+                const secondTetrahedron = tetrahedron.findSecondTetrahedron([redDistance, blueDistance, greenDistance, whiteDistance]);
+
+                //const calculator = new BallPositionCalculator(redDistance, blueDistance, greenDistance, whiteDistance);
                 const result = calculator.calculateRelativePosition();
 
                 if (socket.readyState === WebSocket.OPEN) {
                     if (result !== undefined) {
-                        console.log("Sending result:", JSON.stringify(result));
-                        socket.send(JSON.stringify(result));
+                        const result2 = secondTetrahedron
+                        console.log("Sending result:", JSON.stringify(result2));
+                        socket.send(JSON.stringify(result2));
                     } else {
                         console.log("No valid position calculated.");
                     }

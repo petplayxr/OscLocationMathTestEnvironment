@@ -50,8 +50,14 @@
         // Add white ball with standard material
         const geometry = new THREE.SphereGeometry(0.1, 32, 32);
         const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-        const whiteBall = new THREE.Mesh(geometry, material);
-        scene.add(whiteBall);
+        const whiteBall1 = new THREE.Mesh(geometry, material);
+        const whiteBall2 = new THREE.Mesh(geometry, material);
+        const whiteBall3 = new THREE.Mesh(geometry, material);
+        const whiteBall4 = new THREE.Mesh(geometry, material);
+        scene.add(whiteBall1);
+        scene.add(whiteBall2);
+        scene.add(whiteBall3);
+        scene.add(whiteBall4);
 
         // Add ground plane with standard material
         const planeGeometry = new THREE.PlaneGeometry(10, 10);
@@ -64,12 +70,13 @@
         // Add grid helper
         const gridHelper = new THREE.GridHelper(10,20); // 10 units, 20 subdivisions (0.5m grid)
         gridHelper.position.y = 0.001;
-        //scene.add(gridHelper);
+        scene.add(gridHelper);
 
         // Set camera position
-        camera.position.set(0, 10, 0); // Move camera up along the y-axis
+        camera.position.set(0, 6, 0); // Move camera up along the y-axis
         
-        camera.lookAt(0.001, 0, 0.001); // Camera looks at the origi
+        camera.lookAt(0, 0, 0); // Camera looks at the origi
+        //camera.lookAt(whiteBall1.position); // Camera looks at the white ball
 
         
 
@@ -94,23 +101,53 @@
 
         socket.addEventListener('message', function (event) {
             const data = JSON.parse(event.data);
-            const relativePosition = data;
+            const relativePosition1 = data[0];
+            const relativePosition2 = data[1];
+            const relativePosition3 = data[2];
+            const relativePosition4 = data[3];
+            //console.log(relativePosition);
 
             // Assuming relativePosition is an array [x, y, z] and remapPosition is correctly defined
-            const remappedRelativePosition = [
-                remapPosition(relativePosition[0], 1, 0, 0, 5),
-                remapPosition(relativePosition[1], 1, 0, 0, 5),
-                remapPosition(relativePosition[2], 1, 0, 0, 5)
+            const remappedRelativePosition1 = [
+                remapPosition(relativePosition1[0], 1, -1, -6, 6),
+                remapPosition(relativePosition1[1], 1, -1, -6, 6),
+                remapPosition(relativePosition1[2], 1, -1, -6, 6)
             ];
+            // Assuming relativePosition is an array [x, y, z] and remapPosition is correctly defined
+            const remappedRelativePosition2 = [
+                remapPosition(relativePosition2[0], 1, -1, -6, 6),
+                remapPosition(relativePosition2[1], 1, -1, -6, 6),
+                remapPosition(relativePosition2[2], 1, -1, -6, 6)
+            ];
+            // Assuming relativePosition is an array [x, y, z] and remapPosition is correctly defined
+            const remappedRelativePosition3 = [
+                remapPosition(relativePosition3[0], 1, -1, -6, 6),
+                remapPosition(relativePosition3[1], 1, -1, -6, 6),
+                remapPosition(relativePosition3[2], 1, -1, -6, 6)
+            ];
+            // Assuming relativePosition is an array [x, y, z] and remapPosition is correctly defined
+            const remappedRelativePosition4 = [
+                remapPosition(relativePosition4[0], 1, -1, -6, 6),
+                remapPosition(relativePosition4[1], 1, -1, -6, 6),
+                remapPosition(relativePosition4[2], 1, -1, -6, 6)
+            ];
+
+            //camera.lookAt(whiteBall1.position)
+
+
 
             // Set position based on remapped coordinates
             // Ensure the axes are correctly mapped; here, it seems there was an axis swap in your original code
-            whiteBall.position.set(remappedRelativePosition[1], 0, remappedRelativePosition[0]);
+            whiteBall1.position.set(remappedRelativePosition1[0], relativePosition1[2], remappedRelativePosition1[1]);
+            whiteBall2.position.set(remappedRelativePosition2[0], relativePosition2[2], remappedRelativePosition2[1]);
+            whiteBall3.position.set(remappedRelativePosition3[0], relativePosition3[2], remappedRelativePosition3[1]);
+            whiteBall4.position.set(remappedRelativePosition4[0], relativePosition4[2], remappedRelativePosition4[1]);
+            
 
             // Update height indicator
-            const heightPercentage = (remappedRelativePosition[1] / 10) * 100;
-            document.getElementById('height-indicator').style.height = heightPercentage + '%';
-            document.getElementById('height-indicator').textContent = remappedRelativePosition[3].toFixed(2);
+            //const heightPercentage = (remappedRelativePosition[1] / 10) * 100;
+            //document.getElementById('height-indicator').style.height = heightPercentage + '%';
+            //document.getElementById('height-indicator').textContent = remappedRelativePosition[2].toFixed(2); 
         });
 
         // Handle window resize
